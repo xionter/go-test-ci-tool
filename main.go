@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	githubAPIURL   = "https://api.github.com/repos/xionter/go-test-ci-tool/git/ref/heads"
+	githubAPIURL   = "https://api.github.com/repos/xionter/go-test-ci-tool/git/ref/heads/"
 	workingBranch  = "main"
 	testingRepoDir = "test"
 	repoName = "go-test-ci-tool"
