@@ -16,6 +16,7 @@ const (
 	githubAPIURL   = "https://api.github.com/repos/xionter/go-test-ci-tool/git/ref/heads"
 	workingBranch  = "main"
 	testingRepoDir = "test"
+	repoName = "go-test-ci-tool"
 )
 
 func check(err error) {
@@ -57,7 +58,7 @@ func git(repoPath string, args ...string) (string, error) {
 func syncTestRepo() (string, error) {
 	homeDir, err := os.UserHomeDir()
 	check(err)
-	testingRepoPath := filepath.Join(homeDir, testingRepoDir)
+	testingRepoPath := filepath.Join(homeDir, testingRepoDir, repoName)
 
 	localSHA, err := git("", "rev-parse", "HEAD")
 	check(err)
