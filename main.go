@@ -5,9 +5,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
+)
+
+const (
+	githubAPIURL   = "https://api.github.com/repos/xionter/go-test-ci-tool/git/ref/heads"
+	workingBranch  = "main"
+	testingRepoDir = "test"
 )
 
 func check(err error) {
@@ -17,18 +25,13 @@ func check(err error) {
 }
 
 type RefResponse struct {
-	Ref    string `json:"ref"`
-	NodeID string `json:"node_id"`
-	URL    string `json:"url"`
 	Object struct {
-		Sha  string `json:"sha"`
-		Type string `json:"type"`
-		URL  string `json:"url"`
+		Sha string `json:"sha"`
 	} `json:"object"`
 }
 
-func getRemoteRepoSha() (sha string) {
-	headUrl := "https://api.github.com/repos/xionter/go-test-ci-tool/git/ref/heads/main"
+func getRemoteSHA() (sha string) {
+	headUrl := fmt.Sprintf("%s%s", githubAPIURL, workingBranch)
 	resp, err := http.Get(headUrl)
 	check(err)
 
@@ -43,20 +46,60 @@ func getRemoteRepoSha() (sha string) {
 	return remoteSha
 }
 
-func main() {
-	out, err := exec.Command("git", "rev-parse", "HEAD").Output()
+func git(repoPath string, args ...string) (string, error) {
+	cmd := exec.Command("git", args...)
+	cmd.Dir = repoPath
+	out, err := cmd.CombinedOutput()
 	check(err)
-	localSha := strings.TrimSpace(string(out))
-	fmt.Printf("сейчас у ветки такой хэш - %v \n", localSha)
+	return strings.TrimSpace(string(out)), nil
+}
 
+func syncTestRepo() (string, error) {
+	homeDir, err := os.UserHomeDir()
+	check(err)
+	testingRepoPath := filepath.Join(homeDir, testingRepoDir)
+
+	localSHA, err := git("", "rev-parse", "HEAD")
+	check(err)
+	remoteSHA := getRemoteSHA()
+
+	if _, err := git(testingRepoPath, "fetch", "origin", workingBranch); err != nil {
+		return "", err
+	}
+
+	if localSHA == remoteSHA {
+		return "", nil
+	}
+
+	if _, err := git(testingRepoPath, "checkout", workingBranch); err != nil {
+		return "", err
+	}
+	if _, err := git(testingRepoPath, "reset", "--hard", remoteSHA); err != nil {
+		return "", err
+	}
+	return remoteSHA, nil
+}
+
+func main() {
 	ticker := time.NewTicker(30 * time.Second)
-	for range ticker.C {
-		remoteSha := getRemoteRepoSha()
-		fmt.Printf("сейчас в репозитории на гитхабе такой хэш - %v \n", remoteSha)
 
-		if localSha != remoteSha {
-			fmt.Println("новый комит блин")
-			break
+	sha, err := syncTestRepo()
+	check(err)
+	if sha != "" {
+		fmt.Println("новые комиты, запускаю для тестов...")
+		//запустить тесты ~test/repo
+	} else {
+		fmt.Println("пока что не было новых комитов")
+	}
+
+	for range ticker.C {
+		sha, err := syncTestRepo()
+		check(err)
+		if sha != "" {
+			fmt.Println("новые комиты, запускаю для тестов...")
+			//запустить тесты ~test/repo
+		} else {
+			fmt.Println("пока что не было новых комитов")
 		}
 	}
 	ticker.Stop()
