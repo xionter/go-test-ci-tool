@@ -13,10 +13,10 @@ import (
 )
 
 const (
-	githubAPIURL   = "https://api.github.com/repos/xionter/go-test-ci-tool/git/ref/heads/"
 	workingBranch  = "main"
 	testingRepoDir = "test"
-	repoName = "go-test-ci-tool"
+	repoName       = "odyssey"
+	githubAPIURL   = "https://api.github.com/repos/xionter/" + repoName + "/git/ref/heads/"
 )
 
 func check(err error) {
@@ -88,7 +88,7 @@ func main() {
 	check(err)
 	if sha != "" {
 		fmt.Println("новые комиты, запускаю для тестов...")
-		//запустить тесты ~test/repo
+		//запустить тесты ~test/odyssey
 	} else {
 		fmt.Println("пока что не было новых комитов")
 	}
@@ -98,7 +98,7 @@ func main() {
 		check(err)
 		if sha != "" {
 			fmt.Println("новые комиты, запускаю для тестов...")
-			//запустить тесты ~test/repo
+			//запустить тесты ~test/odyssey
 		} else {
 			fmt.Println("пока что не было новых комитов")
 		}
