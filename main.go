@@ -63,7 +63,7 @@ func syncTestRepo() (string, error) {
 	localSHA, err := git("", "rev-parse", "HEAD")
 	check(err)
 	remoteSHA := getRemoteSHA()
-
+	fmt.Println(localSHA, remoteSHA)
 	if _, err := git(testingRepoPath, "fetch", "origin", workingBranch); err != nil {
 		return "", err
 	}
